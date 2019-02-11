@@ -327,6 +327,37 @@
   revision = "c815116bbe78a3dc38c3458c992c5c4bdd5811ea"
 
 [[projects]]
+  branch = "master"
+  digest = "1:887452f3a589c4e0d6263a308cdb390fd8a6f21afcf7dc5b83fd1fba4e311775"
+  name = "github.com/samsung-cnct/cma-operator"
+  packages = [
+    "cmd/cma-operator/cmd",
+    "pkg/apis/cma/v1alpha1",
+    "pkg/controllers/sds-cluster",
+    "pkg/controllers/sds-package-manager",
+    "pkg/controllers/sdsapplication",
+    "pkg/generated/cma/client/clientset/versioned",
+    "pkg/generated/cma/client/clientset/versioned/scheme",
+    "pkg/generated/cma/client/clientset/versioned/typed/cma/v1alpha1",
+    "pkg/generated/cma/client/clientset/versioned/typed/cma/v1alpha1/fake",
+    "pkg/generated/cma/client/informers/externalversions/cma",
+    "pkg/generated/cma/client/informers/externalversions/cma/v1alpha1",
+    "pkg/generated/cma/client/informers/externalversions/internalinterfaces",
+    "pkg/generated/cma/client/listers/cma/v1alpha1",
+    "pkg/util",
+    "pkg/util/cma",
+    "pkg/util/cmagrpc",
+    "pkg/util/helmutil",
+    "pkg/util/k8sutil",
+    "pkg/util/retryutil",
+    "pkg/util/sds/callback",
+    "pkg/util/sds/token",
+    "pkg/version",
+  ]
+  pruneopts = "UT"
+  revision = "ac28fdb96506f852c25a4a24368aa5e011c5c799"
+
+[[projects]]
   digest = "1:87c2e02fb01c27060ccc5ba7c5a407cc91147726f8f40b70cceeedbc52b1f3a8"
   name = "github.com/sirupsen/logrus"
   packages = ["."]
@@ -738,6 +769,28 @@
     "github.com/golang/glog",
     "github.com/juju/loggo",
     "github.com/samsung-cnct/cluster-manager-api/pkg/generated/api",
+    "github.com/samsung-cnct/cma-operator/cmd/cma-operator/cmd",
+    "github.com/samsung-cnct/cma-operator/pkg/apis/cma/v1alpha1",
+    "github.com/samsung-cnct/cma-operator/pkg/controllers/sds-cluster",
+    "github.com/samsung-cnct/cma-operator/pkg/controllers/sds-package-manager",
+    "github.com/samsung-cnct/cma-operator/pkg/controllers/sdsapplication",
+    "github.com/samsung-cnct/cma-operator/pkg/generated/cma/client/clientset/versioned",
+    "github.com/samsung-cnct/cma-operator/pkg/generated/cma/client/clientset/versioned/scheme",
+    "github.com/samsung-cnct/cma-operator/pkg/generated/cma/client/clientset/versioned/typed/cma/v1alpha1",
+    "github.com/samsung-cnct/cma-operator/pkg/generated/cma/client/clientset/versioned/typed/cma/v1alpha1/fake",
+    "github.com/samsung-cnct/cma-operator/pkg/generated/cma/client/informers/externalversions/cma",
+    "github.com/samsung-cnct/cma-operator/pkg/generated/cma/client/informers/externalversions/cma/v1alpha1",
+    "github.com/samsung-cnct/cma-operator/pkg/generated/cma/client/informers/externalversions/internalinterfaces",
+    "github.com/samsung-cnct/cma-operator/pkg/generated/cma/client/listers/cma/v1alpha1",
+    "github.com/samsung-cnct/cma-operator/pkg/util",
+    "github.com/samsung-cnct/cma-operator/pkg/util/cma",
+    "github.com/samsung-cnct/cma-operator/pkg/util/cmagrpc",
+    "github.com/samsung-cnct/cma-operator/pkg/util/helmutil",
+    "github.com/samsung-cnct/cma-operator/pkg/util/k8sutil",
+    "github.com/samsung-cnct/cma-operator/pkg/util/retryutil",
+    "github.com/samsung-cnct/cma-operator/pkg/util/sds/callback",
+    "github.com/samsung-cnct/cma-operator/pkg/util/sds/token",
+    "github.com/samsung-cnct/cma-operator/pkg/version",
     "github.com/sirupsen/logrus",
     "github.com/spf13/cobra",
     "github.com/spf13/viper",

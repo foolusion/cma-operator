@@ -232,7 +232,10 @@ func (c *SDSClusterController) waitForClusterReady(cluster *api.SDSCluster) {
 	cmagrpcClient, err := cmagrpc.CreateNewDefaultClient()
 	if err != nil {
 		logger.Errorf("could not create cma grpc client while waiting for cluster %s to come up", cluster.Name)
+		// If we don't return here the call later will panic later
+		return
 	}
+	defer cmagrpcClient.Close()
 	if cluster.Annotations[ClusterCallbackURLAnnotation] != "" {
 		// We need to notify someone that the cluster is now in progress (again)
 		message := &sdscallback.ClusterMessage{
@@ -426,6 +429,8 @@ func (c *SDSClusterController) handleDeletedCluster(cluster *api.SDSCluster) {
 	if err != nil {
 		logger.Errorf("could not create cma grpc client while waiting for cluster %s to delete", cluster.Name)
 	}
+	defer cmagrpcClient.Close()
+
 	retryCount := 0
 	for retryCount < WaitForClusterChangeMaxTries {
 		_, err := cmagrpcClient.GetCluster(cmagrpc.GetClusterInput{Name: cluster.Name, Provider: cluster.Spec.Provider})
@@ -454,4 +459,98 @@ func (c *SDSClusterController) handleFailedCluster(cluster *api.SDSCluster) {
 
 func (c *SDSClusterController) handleUpgradedCluster(cluster *api.SDSCluster) {
 
+}
+
+type createStateData struct {
+	start time.Time
+	cluster *api.SDSCluster
+	cmaClient cmagrpc.ClientInterface
+	client *versioned.Clientset
+	err error
+}
+
+type createState func(*createStateData) createState
+
+func runCreate(cluster *api.SDSCluster, client *versioned.Clientset) {
+	cmagrpcClient, err := cmagrpc.CreateNewDefaultClient()
+	if err != nil {
+		logger.Errorf("failed to create cma client: %s", err)
+		return
+	}
+	defer cmagrpcClient.Close()
+
+	s := createStateData{start: time.Now(), cluster: cluster, cmaClient: cmagrpcClient, client: client}
+	state := createInitialState
+	for state != nil {
+		state = state(&s)
+	}
+	if s.err != nil {
+		logger.Errorf("failed to handle create: %s", s.err)
+	}
+}
+
+func createInitialState(state *createStateData) createState {
+	if state.cluster.Annotations[ClusterCallbackURLAnnotation] != "" {
+		// We need to notify someone that the cluster is now in progress (again)
+		message := &sdscallback.ClusterMessage{
+			State:        sdscallback.ClusterMessageStateInProgress,
+			StateText:    pb.ClusterStatus_PROVISIONING.String(),
+			ProgressRate: 0,
+		}
+		sdscallback.DoCallback(state.cluster.Annotations[ClusterCallbackURLAnnotation], message)
+	}
+
+	return createPollForClusterReady
+}
+
+func createPollForClusterReady(state *createStateData) createState {
+	isClusterReady := func() (bool, error) {
+		clusterInfo, err := state.cmaClient.GetCluster(cmagrpc.GetClusterInput{Name: state.cluster.Name, Provider: state.cluster.Spec.Provider})
+		if err != nil {
+			return false, err
+		}
+		logger.Infof("Cluster status is %s", clusterInfo.Status)
+		switch clusterInfo.Status {
+		case "Created", "Succeeded", "Upgraded", "Ready", pb.ClusterStatus_RUNNING.String():
+			return true, nil
+		default:
+			return false, nil
+		}
+	}
+
+	if err := wait.Poll(WaitForClusterChangeTimeInterval, WaitForClusterChangeTimeInterval * WaitForClusterChangeMaxTries, isClusterReady); err != nil {
+		state.err = err
+		return createClusterFail
+	}
+	return createClusterSuccess
+}
+
+func createClusterFail(state *createStateData) createState {
+	if state.cluster.Annotations[ClusterCallbackURLAnnotation] != "" {
+		logger.Errorf("Cluster %s is presumed to be deleted", state.cluster.Name)
+		message := &sdscallback.ClusterMessage{
+			State:        sdscallback.ClusterMessageStateCompleted,
+			StateText:    "Deleted",
+			ProgressRate: 100,
+		}
+		sdscallback.DoCallback(state.cluster.Annotations[ClusterCallbackURLAnnotation], message)
+	}
+	return createDeleteCluster
+}
+
+func createClusterSuccess(state *createStateData) createState {
+	freshCopy, err := state.client.CmaV1alpha1().
+		SDSClusters(viper.GetString(KubernetesNamespaceViperVariableName)).
+		Get(state.cluster.Name, v1.GetOptions{})
+	if err != nil {
+		state.err = err
+		return nil
+	}
+
+
+	return nil
+}
+
+func createDeleteCluster(state *createStateData) createState {
+	return nil
 }
